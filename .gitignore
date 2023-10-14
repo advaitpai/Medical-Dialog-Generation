@@ -155,6 +155,8 @@ cython_debug/
 # DS_Store
 .DS_Store
 
+# Datasets should be ignored due to file size restrictions
+datasets/
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
