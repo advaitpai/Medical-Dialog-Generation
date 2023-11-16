@@ -2,3 +2,4 @@ spacy
 tqdm
 pandas
 pgvector
+sentence-transformers
