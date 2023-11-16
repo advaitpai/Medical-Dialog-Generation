@@ -25,4 +25,5 @@ if __name__ == "__main__":
         for i in tqdm.tqdm(range(len(df))):
             cos_scores.append(cosine_similarity(np.array(df['patient_embeddings'].iloc[i]).reshape(1,-1),np.array(embedding).reshape(1,-1))[0][0])
         df['cosine_scores'] = cos_scores
-        df.sort_values('cosine_scores',ascending=False).iloc[:10].to_csv('output.csv')
+        # df.sort_values('cosine_scores',ascending=False).iloc[:10].to_csv('output.csv')
+    
