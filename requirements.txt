@@ -1,6 +1,14 @@
+pandas
+numpy
+math
 spacy
 tqdm
 pandas
 pgvector
 sentence-transformers
 huggingface_hub["cli"]
+pickle  
+pgvector
+torch
+openai
+time
