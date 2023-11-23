@@ -7,9 +7,37 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import tqdm
 from transformers import pipeline, set_seed
+import openai
+import time
+
+openai.api_key = "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"
+
+# def fetch_llm_response(query):
+#     # pipe = pipeline("question-answering", model="t5-large", max_new_tokens=2000, device=torch_device, token=keys["hugging_face_api_token"])
+#     # pipe = pipeline("question-answering", model="meta-llama/Llama-2-7b-chat-hf",device = torch_device,token=keys["hugging_face_api_token"])
+#     set_seed(1711)
+#     # query_str = "Query - " + query + "\nContext -" + context
+#     # generated_text = generator("query-")
+    
+#     messages = [{"role":"system",
+#              "content":"Your are a helpful healthcare assistant. You have been given a question: %s." %query,
+#              },
+#             ]
+#     prompt = """Give  an extremely engaging and detailed summary based on the context in the below url.
+
+#     url : <<CONTEXT>>
+
+#     DETAILED SUMMARY:
+
+#     """
+
+#     prompt = prompt.replace("<<CONTEXT>>","babe")
+#     print(prompt,messages)
+# fetch_llm_response("experiencing dizziness")
+# exit()
 
 global torch_device, keys, pipe
-torch_device = 'cuda' # should be 'cuda' for vm or 'mps' for macbook with MX chips
+torch_device = 'mps' # should be 'cuda' for vm or 'mps' for macbook with MX chips
 with open('datasets/keys.json') as f:
     keys = json.load(f)
 
@@ -27,7 +55,9 @@ def find_top_k_responses(k,query_embedding):
     embeddings_all['cosine_scores'] = cos_scores
     # embeddings_all.sort_values('cosine_scores',ascending=False).iloc[:10].to_csv('output.csv')
     top_k = embeddings_all.sort_values('cosine_scores',ascending=False).iloc[:k]
+    # print(top_k[['doctor_dialog','cosine_scores']])
     resps = top_k['doctor_dialog']
+
     return resps
 
 def fetch_llm_response(query,context):
@@ -36,19 +66,57 @@ def fetch_llm_response(query,context):
     set_seed(1711)
     context_str = ""
     for i in context:
-        context_str = " "+i
+        context_str += " "+i
     # query_str = "Query - " + query + "\nContext -" + context
     # generated_text = generator("query-")
-    generated_text = pipe(question = query, context = context_str)
+    # generated_text = pipe(question = query, context = context_str)
     # generated_text = context_str
-    return generated_text
-    # pass
+    
+    messages = [{"role":"system",
+             "content":"You are a helpful healthcare assistant. Question: %s" %query,
+             },
+            ]
+    prompt = """Respond like a chatbot giving an extremely engaging response based on the context given below.
 
+    context : <<CONTEXT>>
+
+    DETAILED SUMMARY:
+
+    """
+
+    prompt = prompt.replace("<<CONTEXT>>",context_str)
+    print(prompt)
+
+    messages.append({"role":"user","content":prompt})
+
+
+    return retrive_summary(messages)
+
+def retrive_summary(messages):
+        max_retry = 1
+        retry = 0
+        #
+        while True:
+            try:
+                chat = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                                    messages = messages,
+                                                    temperature=0,
+                                                    )
+                reply = chat.choices[0].message.content 
+                return reply
+            except Exception as oops:
+                retry += 1
+                if retry >= max_retry:
+                    time.sleep(25)
+                    return "Accessing the Completion service error: %s" % oops
+                    
+
+ 
 
 if __name__ == "__main__":
     global embeddings_all
-    pipe = pipeline("question-answering", model="cxllin/Llama2-7b-med-v1", max_new_tokens=512, device=torch_device, token=keys["hugging_face_api_token"])
-    print("Model succesfully loaded, loading embeddings..")
+    # pipe = pipeline("question-answering", model="cxllin/Llama2-7b-med-v1", max_new_tokens=512, device=torch_device, token=keys["hugging_face_api_token"])
+    # print("Model succesfully loaded, loading embeddings..")
     embeddings_base_path = "datasets/embeddings/" # Should point to the relative folder containing the embeddings
     embeddings_all = pd.read_pickle(embeddings_base_path+'embeddings.pkl') # Either use embeddings.pkl or embeddings_large.pkl
     print(embeddings_all.head(10))
@@ -56,6 +124,7 @@ if __name__ == "__main__":
     while user_inp!='0':
         user_inp = input("Enter a sentence: ")
         embedding = create_embeddings([user_inp],batch_size=1).tolist()[0]
+        # print(embedding)
         responses = find_top_k_responses(k=10,query_embedding=embedding)
         llm_response = fetch_llm_response(user_inp,responses)
         print(llm_response)
