@@ -13,50 +13,23 @@ import csv
 import json
 
 
+global torch_device, keys
 
-# def fetch_llm_response(query):
-#     # pipe = pipeline("question-answering", model="t5-large", max_new_tokens=2000, device=torch_device, token=keys["hugging_face_api_token"])
-#     # pipe = pipeline("question-answering", model="meta-llama/Llama-2-7b-chat-hf",device = torch_device,token=keys["hugging_face_api_token"])
-#     set_seed(1711)
-#     # query_str = "Query - " + query + "\nContext -" + context
-#     # generated_text = generator("query-")
-    
-#     messages = [{"role":"system",
-#              "content":"Your are a helpful healthcare assistant. You have been given a question: %s." %query,
-#              },
-#             ]
-#     prompt = """Give  an extremely engaging and detailed summary based on the context in the below url.
+# def get_keys(path):
+#     with open(path) as f:
+#         return json.load(f)
 
-#     url : <<CONTEXT>>
-
-#     DETAILED SUMMARY:
-
-#     """
-
-#     prompt = prompt.replace("<<CONTEXT>>","babe")
-#     print(prompt,messages)
-# fetch_llm_response("experiencing dizziness")
-# exit()
-
-global torch_device, keys, pipe
-
-def get_keys(path):
-    with open(path) as f:
-        return json.load(f)
-
-keys = get_keys("datasets/openai_key.json")
-openai.api_key = keys["openai_api_token"]
+# keys = get_keys("datasets/openai_key.json")
 
 torch_device = 'mps' # should be 'cuda' for vm or 'mps' for macbook with MX chips
-# with open('datasets/keys.json') as f:
-#     keys = json.load(f)
-
-
+with open('datasets/keys.json') as f:
+    keys = json.load(f)
+    openai.api_key = keys["openai_api_token"]
 
 def create_embeddings(sentences,batch_size,progress=True,multi=False):
     # print("Checking if MPS backend for Torch is available:",torch.backends.mps.is_available())
-    # model = SentenceTransformer('multi-qa-mpnet-base-dot-v1',device=torch_device) # Use if using embeddings_large
-    model = SentenceTransformer('all-MiniLM-L6-v2',device = torch_device) # Use if using embeddings
+    model = SentenceTransformer('multi-qa-mpnet-base-dot-v1',device=torch_device) # Use if using embeddings_large
+    # model = SentenceTransformer('all-MiniLM-L6-v2',device = torch_device) # Use if using embeddings
     embeddings = model.encode(sentences,show_progress_bar=progress,batch_size=batch_size)
     return embeddings
 
@@ -73,16 +46,10 @@ def find_top_k_responses(k,query_embedding):
     return resps
 
 def fetch_llm_response(query,context):
-    # pipe = pipeline("question-answering", model="t5-large", max_new_tokens=2000, device=torch_device, token=keys["hugging_face_api_token"])
-    # pipe = pipeline("question-answering", model="meta-llama/Llama-2-7b-chat-hf",device = torch_device,token=keys["hugging_face_api_token"])
     set_seed(1711)
     context_str = ""
     for i in context:
         context_str += " "+i
-    # query_str = "Query - " + query + "\nContext -" + context
-    # generated_text = generator("query-")
-    # generated_text = pipe(question = query, context = context_str)
-    # generated_text = context_str
     
     messages = [{"role":"system",
              "content":"You are a helpful healthcare assistant. Question: %s" %query,
@@ -128,32 +95,23 @@ def retrive_summary(messages):
  
 
 if __name__ == "__main__":
-
-
-
     global embeddings_all
+    embeddings_base_path = "datasets/embeddings/" # Should point to the relative folder containing the embeddings
+    embeddings_all = pd.read_pickle(embeddings_base_path+'embeddings.pkl') # Either use embeddings.pkl or embeddings_large.pkl
+    print("Embeddings fetched:",embeddings_all.head(10))
 
-    resps = pd.read_csv("datasets/responses.csv").astype(str)
-    messages = pd.read_csv("datasets/messages.csv")
+    # resps = pd.read_csv("datasets/responses.csv").astype(str)
+    # messages = pd.read_csv("datasets/messages.csv")
     
     # with open('datasets/messages.csv', 'w', newline='') as file:
     #     writer = csv.writer(file)
     # print(len(messages['message'].dropna()))
     
-    if resps.iloc[0, 0] == 'nan':
-        i=0
-    else:
-      i=len(resps)
-
-    # print(i)
-    # exit()
+    # if resps.iloc[0, 0] == 'nan':
+    #     i=0
+    # else:
+    #     i=len(resps)
     
-
-    # pipe = pipeline("question-answering", model="cxllin/Llama2-7b-med-v1", max_new_tokens=512, device=torch_device, token=keys["hugging_face_api_token"])
-    # print("Model succesfully loaded, loading embeddings..")
-    embeddings_base_path = "datasets/embeddings/" # Should point to the relative folder containing the embeddings
-    embeddings_all = pd.read_pickle(embeddings_base_path+'embeddings.pkl') # Either use embeddings.pkl or embeddings_large.pkl
-    print(embeddings_all.head(10))
 
     # user_inp = ""
     # while user_inp!='0':
@@ -164,6 +122,11 @@ if __name__ == "__main__":
     #     llm_response = fetch_llm_response(user_inp,responses)
     #     print(llm_response)
 
+    threshold = 0.62
+    test_set = pd.read_pickle("datasets/test_samples.pkl")
+    # advait_test_set = test_set.iloc[:100]
+    divyasha_test_set = test_set.iloc[100:200]
+    # zohair_test_set = test_set.iloc[200:300]
     
     while (i!=len(messages)) & (len(messages)!='0'):
         print("i: ",i)
