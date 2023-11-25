@@ -10,8 +10,9 @@ from transformers import pipeline, set_seed
 import openai
 import time
 import csv
+import json
 
-openai.api_key = "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"
+
 
 # def fetch_llm_response(query):
 #     # pipe = pipeline("question-answering", model="t5-large", max_new_tokens=2000, device=torch_device, token=keys["hugging_face_api_token"])
@@ -38,9 +39,19 @@ openai.api_key = "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"
 # exit()
 
 global torch_device, keys, pipe
+
+def get_keys(path):
+    with open(path) as f:
+        return json.load(f)
+
+keys = get_keys("datasets/openai_key.json")
+openai.api_key = keys["openai_api_token"]
+
 torch_device = 'mps' # should be 'cuda' for vm or 'mps' for macbook with MX chips
-with open('datasets/keys.json') as f:
-    keys = json.load(f)
+# with open('datasets/keys.json') as f:
+#     keys = json.load(f)
+
+
 
 def create_embeddings(sentences,batch_size,progress=True,multi=False):
     # print("Checking if MPS backend for Torch is available:",torch.backends.mps.is_available())
@@ -96,7 +107,7 @@ def fetch_llm_response(query,context):
 def retrive_summary(messages):
         max_retry = 1
         retry = 0
-        code = 0
+        # code = 0
         #
         while True:
             try:
@@ -105,19 +116,39 @@ def retrive_summary(messages):
                                                     temperature=0,
                                                     )
                 reply = chat.choices[0].message.content 
-                return reply,code
+                return reply
             except Exception as oops:
                 retry += 1
                 time.sleep(25)
                 if retry >= max_retry:
-                    code=-1
-                    return "Accessing the Completion service error: %s" % oops, code
+                    # code=-1
+                    return "Accessing the Completion service error: %s" % oops
                     
 
  
 
 if __name__ == "__main__":
+
+
+
     global embeddings_all
+
+    resps = pd.read_csv("datasets/responses.csv").astype(str)
+    messages = pd.read_csv("datasets/messages.csv")
+    
+    # with open('datasets/messages.csv', 'w', newline='') as file:
+    #     writer = csv.writer(file)
+    # print(len(messages['message'].dropna()))
+    
+    if resps.iloc[0, 0] == 'nan':
+        i=0
+    else:
+      i=len(resps)
+
+    # print(i)
+    # exit()
+    
+
     # pipe = pipeline("question-answering", model="cxllin/Llama2-7b-med-v1", max_new_tokens=512, device=torch_device, token=keys["hugging_face_api_token"])
     # print("Model succesfully loaded, loading embeddings..")
     embeddings_base_path = "datasets/embeddings/" # Should point to the relative folder containing the embeddings
@@ -133,28 +164,20 @@ if __name__ == "__main__":
     #     llm_response = fetch_llm_response(user_inp,responses)
     #     print(llm_response)
 
-    resp = pd.read_csv("datasets/responses.csv")
-    messages = pd.read_csv("datasets/messages.csv")
-
-    # with open('datasets/messages.csv', 'w', newline='') as file:
-    #     writer = csv.writer(file)
-    # print(len(messages['message'].dropna()))
-
-    i=len(resp)
-
-    # responses = pd.DataFrame()
+    
     while (i!=len(messages)) & (len(messages)!='0'):
+        print("i: ",i)
+        start = time.process_time()
         embedding = create_embeddings([messages.iloc[i]['message']],batch_size=1).tolist()[0]
         responses = find_top_k_responses(k=10,query_embedding=embedding)
-        llm_response,code = fetch_llm_response(messages.iloc[i]['message'],responses)
-        start = time.process_time()
-        resp.iloc[i]['response'] = llm_response
-        resp.iloc[i]['message'] = messages.iloc[i]
-        if code==-1:
-            messages.to_csv("datasets/responses.csv",mode='a',header=False)
-        print(time.process_time() - start)
-        print("code: ",code)
-        i+=1
         
-
-       
+        llm_response = fetch_llm_response(messages.iloc[i]['message'],responses)
+        resps.at[i, 'message'] = messages.iloc[i]['message']
+        resps.iloc[i]['response'] = llm_response
+        # with open('datasets/responses.csv', 'a') as f:
+        #    f.write('\n')
+        # resps.to_csv("datasets/responses.csv",mode='a',header=False,index=False)
+        resps.to_csv("datasets/responses.csv", index=False)
+        time.sleep(15)
+        print("Time: ",time.process_time() - start)
+        i+=1
