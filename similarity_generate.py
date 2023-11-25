@@ -9,6 +9,7 @@ import tqdm
 from transformers import pipeline, set_seed
 import openai
 import time
+import csv
 
 openai.api_key = "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"
 
@@ -95,6 +96,7 @@ def fetch_llm_response(query,context):
 def retrive_summary(messages):
         max_retry = 1
         retry = 0
+        code = 0
         #
         while True:
             try:
@@ -103,12 +105,13 @@ def retrive_summary(messages):
                                                     temperature=0,
                                                     )
                 reply = chat.choices[0].message.content 
-                return reply
+                return reply,code
             except Exception as oops:
                 retry += 1
+                time.sleep(25)
                 if retry >= max_retry:
-                    time.sleep(25)
-                    return "Accessing the Completion service error: %s" % oops
+                    code=-1
+                    return "Accessing the Completion service error: %s" % oops, code
                     
 
  
@@ -120,13 +123,38 @@ if __name__ == "__main__":
     embeddings_base_path = "datasets/embeddings/" # Should point to the relative folder containing the embeddings
     embeddings_all = pd.read_pickle(embeddings_base_path+'embeddings.pkl') # Either use embeddings.pkl or embeddings_large.pkl
     print(embeddings_all.head(10))
-    user_inp = ""
-    while user_inp!='0':
-        user_inp = input("Enter a sentence: ")
-        embedding = create_embeddings([user_inp],batch_size=1).tolist()[0]
-        # print(embedding)
+
+    # user_inp = ""
+    # while user_inp!='0':
+    #     user_inp = input("Enter a sentence: ")
+    #     embedding = create_embeddings([user_inp],batch_size=1).tolist()[0]
+    #     # print(embedding)
+    #     responses = find_top_k_responses(k=10,query_embedding=embedding)
+    #     llm_response = fetch_llm_response(user_inp,responses)
+    #     print(llm_response)
+
+    resp = pd.read_csv("datasets/responses.csv")
+    messages = pd.read_csv("datasets/messages.csv")
+
+    # with open('datasets/messages.csv', 'w', newline='') as file:
+    #     writer = csv.writer(file)
+    # print(len(messages['message'].dropna()))
+
+    i=len(resp)
+
+    # responses = pd.DataFrame()
+    while (i!=len(messages)) & (len(messages)!='0'):
+        embedding = create_embeddings([messages.iloc[i]['message']],batch_size=1).tolist()[0]
         responses = find_top_k_responses(k=10,query_embedding=embedding)
-        llm_response = fetch_llm_response(user_inp,responses)
-        print(llm_response)
+        llm_response,code = fetch_llm_response(messages.iloc[i]['message'],responses)
+        start = time.process_time()
+        resp.iloc[i]['response'] = llm_response
+        resp.iloc[i]['message'] = messages.iloc[i]
+        if code==-1:
+            messages.to_csv("datasets/responses.csv",mode='a',header=False)
+        print(time.process_time() - start)
+        print("code: ",code)
+        i+=1
+        
 
        
