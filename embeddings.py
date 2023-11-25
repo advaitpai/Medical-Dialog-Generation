@@ -29,12 +29,19 @@ if __name__ == "__main__":
             convo_dict = json.load(f)
         df = pd.DataFrame.from_dict(create_ordered_dict(convo_dict))
         master_df = pd.concat([master_df,df]).reset_index(drop=True)
+    # Create train_test_split
     print("All files combined!")
+    df_test_samples = master_df.sample(300,random_state=2702) # 300 test samples
+    master_df = master_df.drop(df_test_samples.index)
+    master_df = master_df.reset_index(drop=True)
+    # Save test samples
+    df_test_samples.to_pickle('datasets/test_samples.pkl')
+    print("Test samples saved to datasets/test_samples.pkl!")
     print('Creating patient embeddings:')
     master_df['patient_embeddings'] = create_embeddings(sentences=master_df['patient_dialog'],batch_size=64).tolist()
     print('Creating doctor embeddings:')
     master_df['doctor_embeddings'] = create_embeddings(sentences=master_df['doctor_dialog'],batch_size=64).tolist()
     print("Saving embeddings as a checkpoint to .pkl!")
-    pd.to_pickle(master_df,'embeddings_large.pkl')
+    pd.to_pickle(master_df,'datasets/embeddings/embeddings_large.pkl')
     
     
