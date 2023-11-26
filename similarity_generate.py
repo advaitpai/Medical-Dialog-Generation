@@ -9,7 +9,6 @@ import tqdm
 from transformers import pipeline, set_seed
 import openai
 import time
-import csv
 import json
 
 
@@ -142,35 +141,6 @@ if __name__ == "__main__":
         if proc_time < 30:
             time.sleep(20)
 
-
-
-
-    
-    # while res_cnt!=len(messages):
-    #     print("res_cnt: ", res_cnt)
-    #     start = time.process_time()
-    #     embedding = create_embeddings([messages.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
-    #     responses = find_top_k_responses(k=10,query_embedding=embedding)
-        
-    #     llm_response,code = fetch_llm_response(messages.iloc[i]['patient_dialog'],responses)
-    #     if code==-1:
-    #         resps.to_csv("datasets/responses.csv", index=False)
-    #         print(llm_response)
-    #         exit()
-    #     resps.at[i, 'message'] = messages.iloc[i]['message']
-    #     resps.iloc[i]['response'] = llm_response
-    #     # with open('datasets/responses.csv', 'a') as f:
-    #     #    f.write('\n')
-    #     # resps.to_csv("datasets/responses.csv",mode='a',header=False,index=False)
-    #     resps.to_csv("datasets/responses.csv", index=False)
-    #     # time.sleep(15)
-    #     proc_time=time.process_time() - start
-    #     print("Time: ",proc_time)
-    #     if proc_time<30:
-    #         time.sleep(15)
-    #     i+=1
-
-    
 
     # user_inp = ""
     # while user_inp!='0':
