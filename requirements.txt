@@ -12,3 +12,4 @@ pgvector
 torch
 openai
 time
+json
