@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv('datasets/threshold_large.csv')
+df = pd.read_csv('datasets/threshold_large_500.csv')
 print(df.head(10))
 
 print("Mean of median cosine scores: ",np.mean(df['median_cos_scores']))

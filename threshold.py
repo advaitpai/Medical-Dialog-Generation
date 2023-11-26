@@ -41,4 +41,4 @@ df_samples = df_all.sample(500,random_state=2702)
 df_all = df_all.drop(df_samples.index)
 df_samples = find_threshold(df_all,df_samples)
 df_samples = df_samples[['max_cos_scores','median_cos_scores','min_cos_scores']]
-df_samples.to_csv('datasets/threshold_large.csv')
+df_samples.to_csv('datasets/threshold_large_500.csv')
