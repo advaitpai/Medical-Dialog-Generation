@@ -90,7 +90,7 @@ def retreive_summary(messages):
 def filter_by_threshold(responses,threshold):
     res = []
     cosine_scores = []
-    for i in len(responses):
+    for i in range(len(responses)):
         if responses.iloc[i]['cosine_scores']>=threshold:
             res.append(responses.iloc[i]['doctor_dialog'])
             cosine_scores.append(responses.iloc[i]['cosine_scores'])
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         res_cnt = len(resps)
     
     
-    for i in range(res_cnt,len(resps)):
+    for i in range(res_cnt,len(divyasha_test_set)):
         start = time.process_time()
         embedding = create_embeddings([divyasha_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
         responses = find_top_k_responses(k=10, query_embedding=embedding)
