@@ -103,19 +103,19 @@ if __name__ == "__main__":
     print("Embeddings fetched:",embeddings_all.head(10))
 
     base_path = "datasets/results/"
-    file_name = "results.pkl" # Either use embeddings.pkl or embeddings_large.pkl
+    file_name = "results.pkl" 
     
    
     
     test_set = pd.read_pickle("datasets/test_samples.pkl")
     # advait_test_set = test_set.iloc[:100]
-    divyasha_test_set = test_set.iloc[100:103]
+    divyasha_test_set = test_set.iloc[100:200]
     # zohair_test_set = test_set.iloc[200:300]
     # print("Test set loaded:", [divyasha_test_set.iloc[0]['patient_dialog']])
     # exit()
 
     if not os.path.exists(base_path+file_name):
-        resps = pd.DataFrame(columns=['message','response','avg_cosine_scores'])
+        resps = pd.DataFrame(columns=['message','response','avg_cosine_scores','context'])
         res_cnt=0
     else:
         resps = pd.read_pickle(base_path+file_name)
@@ -123,18 +123,20 @@ if __name__ == "__main__":
     
     
     for i in range(res_cnt,len(divyasha_test_set)):
+        print("iter: ", i)
         start = time.process_time()
         embedding = create_embeddings([divyasha_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
-        responses = find_top_k_responses(k=10, query_embedding=embedding)
+        responses,cosine_scores = find_top_k_responses(k=10, query_embedding=embedding)
         llm_response, code = fetch_llm_response(divyasha_test_set.iloc[i]['patient_dialog'], responses)
         if code == -1:
-            resps.to_pickle("datasets/responses.pkl")
+            resps.to_pickle(base_path+file_name)
             print(llm_response)
             exit()
-        resps.at[i, 'message'] = divyasha_test_set.iloc[i]['message']
+        resps.at[i, 'message'] = divyasha_test_set.iloc[i]['patient_dialog']
         resps.iloc[i]['response'] = llm_response
-        resps.iloc[i]['avg_cosine_scores'] = np.mean(responses['cosine_scores'])
-        resps.to_pickle("datasets/responses.pkl")
+        resps.iloc[i]['avg_cosine_scores'] = np.mean(cosine_scores)
+        resps.iloc[i]['context'] = responses
+        resps.to_pickle(base_path+file_name)
         proc_time = time.process_time() - start
         print("Time: ", proc_time)
         if proc_time < 30:
