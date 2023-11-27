@@ -4,6 +4,7 @@ import torch
 import pandas as pd
 import os
 from sklearn.metrics.pairwise import cosine_similarity
+from torch.nn import CosineSimilarity
 import numpy as np
 import tqdm
 from transformers import pipeline, set_seed
@@ -16,6 +17,7 @@ global torch_device, keys, threshold
 threshold = 0.62
 
 torch_device = 'mps' # should be 'cuda' for vm or 'mps' for macbook with MX chips
+torch.device(torch_device)
 with open('datasets/keys.json') as f:
     keys = json.load(f)
     openai.api_key = keys["openai_api_token"]
@@ -30,7 +32,8 @@ def create_embeddings(sentences,batch_size,progress=True,multi=False):
 def find_top_k_responses(k,query_embedding):
     cos_scores = []
     for i in tqdm.tqdm(range(len(embeddings_all))):
-        cos_scores.append(cosine_similarity(np.array(embeddings_all['patient_embeddings'].iloc[i]).reshape(1,-1),np.array(query_embedding).reshape(1,-1))[0][0])
+        # cos_scores.append(cosine_similarity(np.array(embeddings_all['patient_embeddings'].iloc[i]).reshape(1,-1),np.array(query_embedding).reshape(1,-1))[0][0])
+        cos_scores.append(CosineSimilarity(dim=1)(torch.tensor(embeddings_all['patient_embeddings'].iloc[i]).reshape(1,-1),torch.tensor(query_embedding).reshape(1,-1)).item())
     embeddings_all['cosine_scores'] = cos_scores
     # embeddings_all.sort_values('cosine_scores',ascending=False).iloc[:10].to_csv('output.csv')
     top_k = embeddings_all.sort_values('cosine_scores',ascending=False).iloc[:k]
@@ -108,8 +111,6 @@ if __name__ == "__main__":
     base_path = "datasets/results/"
     file_name = "results_advait.pkl" 
     
-   
-    
     test_set = pd.read_pickle("datasets/test_samples.pkl")
     advait_test_set = test_set.iloc[:100]
     # divyasha_test_set = test_set.iloc[100:200]
@@ -125,17 +126,17 @@ if __name__ == "__main__":
         res_cnt = len(resps)
     
     
-    for i in range(res_cnt,len(divyasha_test_set)):
+    for i in range(res_cnt,len(advait_test_set)):
         print("iter: ", i)
         start = time.process_time()
-        embedding = create_embeddings([divyasha_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
+        embedding = create_embeddings([advait_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
         responses,cosine_scores = find_top_k_responses(k=10, query_embedding=embedding)
-        llm_response, code = fetch_llm_response(divyasha_test_set.iloc[i]['patient_dialog'], responses)
+        llm_response, code = fetch_llm_response(advait_test_set.iloc[i]['patient_dialog'], responses)
         if code == -1:
             resps.to_pickle(base_path+file_name)
             print(llm_response)
             exit()
-        resps.at[i, 'message'] = divyasha_test_set.iloc[i]['patient_dialog']
+        resps.at[i, 'message'] = advait_test_set.iloc[i]['patient_dialog']
         resps.iloc[i]['response'] = llm_response
         resps.iloc[i]['avg_cosine_scores'] = np.mean(cosine_scores)
         resps.iloc[i]['context'] = responses
