@@ -6,27 +6,50 @@ def tokenize(text):
     return text.split()
 
 def bleu_score(context_tokens, response_tokens):
+
     scores = []
+    count = 0
     smoothing_function = SmoothingFunction().method1
     
     for i in range(len(context_tokens)):
         try:
             # Calculate BLEU score
+            # if response or context is not empty
             score = corpus_bleu([context_tokens[i]], [response_tokens[i]], smoothing_function=smoothing_function)
             scores.append(score)
+            count += 1
         except KeyError as e:
             # print(f"Error calculating BLEU score for sample {i}: {e}")
             continue # Skip this sample
+            
+    print(f"BLEU score calculated for {count} out of {len(context_tokens)} samples")
 
-        avg_bleu_score = sum(scores)/len(scores)
-    
-    return avg_bleu_score
+    return scores
+
+# # calculate rouge score
+# def rouge_score(context, reponse):
+
+#     context = context.tolist()
+#     reponse = reponse.tolist()
+#     rouge = evaluate.load("rouge")
+#     scores = rouge.compute(predictions=[reponse], references=[context])
+#     return scores
+
 
 if __name__ == "__main__":
 
     test_samples = pd.read_pickle("datasets/test_samples.pkl").reset_index(drop=True)
-    test_samples = test_samples.iloc[0:100]
-    responses = pd.read_csv("datasets/responses_advait.csv")
+    # extract 0 to100 and and 200 to 300 samples
+    test_samples_1 = test_samples.iloc[0:100]
+    test_samples_2 = test_samples.iloc[200:300]
+    test_samples = pd.concat([test_samples_1, test_samples_2], ignore_index=True)
+    context = test_samples['doctor_dialog']
+    generated_responses = pd.read_csv("datasets/responses_all.csv")
+    responses = generated_responses['response']
+
+    print('length of context: ', len(context))
+    print('length of responses: ', len(responses))
+    print('\n')
 
     # print(test_samples['doctor_dialog'].head(10))
     # print('---------------------')
@@ -43,10 +66,21 @@ if __name__ == "__main__":
     # print(f"BLEU Score: {b_score}")
 
     # Calculate BLEU score for test set
-    tokenized_context = [tokenize(c) for c in test_samples['doctor_dialog']]
-    tokenized_response = [tokenize(r) for r in responses['response']]
-    b_score = bleu_score(tokenized_context, tokenized_response)
-    print(f"BLEU Score: {b_score}")
+    tokenized_context = [tokenize(c) for c in context]
+    tokenized_response = [tokenize(r) for r in responses]
+    b_scores = bleu_score(tokenized_context, tokenized_response)
+    # save to text file
+    with open('datasets/bleu_scores.txt', 'w') as f:
+        for item in b_scores:
+            f.write("%s\n" % item)
+
+    avg_b_score = sum(b_scores)/len(b_scores)
+    print(f"Average BLEU Score: {avg_b_score}")
+
+    # # Calculate ROUGE score for test set
+    # r_score = rouge_score(context, responses)
+    # print(f"ROUGE Score: {r_score}")
+
 
     # # Calculate BERT score
     # P, R, F1 = bert_score(context, response)
