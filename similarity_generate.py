@@ -4,7 +4,7 @@ import torch
 import pandas as pd
 import os
 from sklearn.metrics.pairwise import cosine_similarity
-from torch.nn import CosineSimilarity
+# from torch.nn import CosineSimilarity
 import numpy as np
 import tqdm
 from transformers import pipeline, set_seed
@@ -32,8 +32,8 @@ def create_embeddings(sentences,batch_size,progress=True,multi=False):
 def find_top_k_responses(k,query_embedding):
     cos_scores = []
     for i in tqdm.tqdm(range(len(embeddings_all))):
-        # cos_scores.append(cosine_similarity(np.array(embeddings_all['patient_embeddings'].iloc[i]).reshape(1,-1),np.array(query_embedding).reshape(1,-1))[0][0])
-        cos_scores.append(CosineSimilarity(dim=1)(torch.tensor(embeddings_all['patient_embeddings'].iloc[i]).reshape(1,-1),torch.tensor(query_embedding).reshape(1,-1)).item())
+        cos_scores.append(cosine_similarity(np.array(embeddings_all['patient_embeddings'].iloc[i]).reshape(1,-1),np.array(query_embedding).reshape(1,-1))[0][0])
+        # cos_scores.append(CosineSimilarity(dim=1)(torch.tensor(embeddings_all['patient_embeddings'].iloc[i]).reshape(1,-1),torch.tensor(query_embedding).reshape(1,-1)).item())
     embeddings_all['cosine_scores'] = cos_scores
     # embeddings_all.sort_values('cosine_scores',ascending=False).iloc[:10].to_csv('output.csv')
     top_k = embeddings_all.sort_values('cosine_scores',ascending=False).iloc[:k]
@@ -79,15 +79,17 @@ def retreive_summary(messages):
         #
         while True:
             try:
+                print("Running the query through the Completion service. Waiting for response .....")
                 chat = openai.ChatCompletion.create(model="gpt-3.5-turbo",
                                                     messages = messages,
                                                     temperature=0,
                                                     )
-                reply = chat.choices[0].message.content, code
-                return reply
+                reply = chat.choices[0].message.content
+                return reply,code
             except Exception as oops:
+                print("Error accessing the Completion service, retrying...")
                 retry += 1
-                time.sleep(25)
+                time.sleep(10)
                 if retry >= max_retry:
                     code=-1
                     return "Accessing the Completion service error: %s" % oops, code
