@@ -13,3 +13,5 @@ torch
 openai==0.28.0
 time
 json
+bert-score
+nltk
