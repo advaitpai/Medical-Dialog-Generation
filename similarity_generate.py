@@ -44,26 +44,27 @@ def fetch_llm_response(query,context):
     context_str = ""
     for i in context:
         context_str += " "+i
-    
-    messages = [{"role":"system",
-             "content":"You are a helpful healthcare assistant. Question: %s" %query,
+    if len(context_str) == 0 or query == "":
+        print("Context is empty!")
+        messages = [{"role":"system",
+             "content":"You are a helpful healthcare assistant."
              },
             ]
-    prompt = """Respond like a chatbot giving an extremely engaging response based on the context given below.
+        prompt = "Say you don't know the answer to this question. Ask the user to consult a professional doctor. Do not give an answer from your knowledge base"
+    else:
+        messages = [{"role":"system",
+                "content":"You are a helpful healthcare assistant. Question: %s" %query,
+                },
+                ]
+        prompt = """Respond like a chatbot giving an extremely engaging response based on the context given below.
 
-    context : <<CONTEXT>>
+        context : <<CONTEXT>>
 
-    DETAILED SUMMARY:
+        DETAILED SUMMARY:
 
-    """
+        """
 
-    prompt = prompt.replace("<<CONTEXT>>", context_str)
-
-    if len(context_str) == 0:
-     print("Context is empty!")
-     prompt = "Say you don't know the answer to this question. Ask the user to consult a professional doctor. Do not give an answer from your knowledge base"
-    
-    print(prompt)
+        prompt = prompt.replace("<<CONTEXT>>", context_str)
 
     messages.append({"role":"user","content":prompt})
     return retreive_summary(messages)
@@ -105,13 +106,13 @@ if __name__ == "__main__":
     print("Embeddings fetched:",embeddings_all.head(10))
 
     base_path = "datasets/results/"
-    file_name = "results.pkl" 
+    file_name = "results_advait.pkl" 
     
    
     
     test_set = pd.read_pickle("datasets/test_samples.pkl")
-    # advait_test_set = test_set.iloc[:100]
-    divyasha_test_set = test_set.iloc[100:200]
+    advait_test_set = test_set.iloc[:100]
+    # divyasha_test_set = test_set.iloc[100:200]
     # zohair_test_set = test_set.iloc[200:300]
     # print("Test set loaded:", [divyasha_test_set.iloc[0]['patient_dialog']])
     # exit()
@@ -124,32 +125,32 @@ if __name__ == "__main__":
         res_cnt = len(resps)
     
     
-    # for i in range(res_cnt,len(divyasha_test_set)):
-    #     print("iter: ", i)
-    #     start = time.process_time()
-    #     embedding = create_embeddings([divyasha_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
-    #     responses,cosine_scores = find_top_k_responses(k=10, query_embedding=embedding)
-    #     llm_response, code = fetch_llm_response(divyasha_test_set.iloc[i]['patient_dialog'], responses)
-    #     if code == -1:
-    #         resps.to_pickle(base_path+file_name)
-    #         print(llm_response)
-    #         exit()
-    #     resps.at[i, 'message'] = divyasha_test_set.iloc[i]['patient_dialog']
-    #     resps.iloc[i]['response'] = llm_response
-    #     resps.iloc[i]['avg_cosine_scores'] = np.mean(cosine_scores)
-    #     resps.iloc[i]['context'] = responses
-    #     resps.to_pickle(base_path+file_name)
-    #     proc_time = time.process_time() - start
-    #     print("Time: ", proc_time)
-    #     if proc_time < 30:
-    #         time.sleep(20)
+    for i in range(res_cnt,len(divyasha_test_set)):
+        print("iter: ", i)
+        start = time.process_time()
+        embedding = create_embeddings([divyasha_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
+        responses,cosine_scores = find_top_k_responses(k=10, query_embedding=embedding)
+        llm_response, code = fetch_llm_response(divyasha_test_set.iloc[i]['patient_dialog'], responses)
+        if code == -1:
+            resps.to_pickle(base_path+file_name)
+            print(llm_response)
+            exit()
+        resps.at[i, 'message'] = divyasha_test_set.iloc[i]['patient_dialog']
+        resps.iloc[i]['response'] = llm_response
+        resps.iloc[i]['avg_cosine_scores'] = np.mean(cosine_scores)
+        resps.iloc[i]['context'] = responses
+        resps.to_pickle(base_path+file_name)
+        proc_time = time.process_time() - start
+        print("Time: ", proc_time)
+        if proc_time < 30:
+            time.sleep(20)
 
 
-    user_inp = ""
-    while user_inp!='0':
-        user_inp = input("Enter a sentence: ")
-        embedding = create_embeddings([user_inp],batch_size=1).tolist()[0]
-        # print(embedding)
-        responses = find_top_k_responses(k=10,query_embedding=embedding)
-        llm_response = fetch_llm_response(user_inp,[])
-        print(llm_response)
+    # user_inp = ""
+    # while user_inp!='0':
+    #     user_inp = input("Enter a sentence: ")
+    #     embedding = create_embeddings([user_inp],batch_size=1).tolist()[0]
+    #     # print(embedding)
+    #     responses = find_top_k_responses(k=10,query_embedding=embedding)
+    #     llm_response = fetch_llm_response(user_inp,[])
+    #     print(llm_response)
