@@ -10,6 +10,6 @@ huggingface_hub["cli"]
 pickle  
 pgvector
 torch
-openai
+openai==0.28.0
 time
 json
