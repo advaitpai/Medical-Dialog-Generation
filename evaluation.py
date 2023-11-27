@@ -32,13 +32,19 @@ if __name__ == "__main__":
     # print('---------------------')
     # print(responses['response'].head(10))
 
-    # test_context = ["this is a simple example" , "another example"]
-    # test_response = ["this is an example", "yet another example"]
-    # print(len(test_context), len(test_response))
+    # # Testing BLEU function
+    # test_context = (["The cat is on the mat.", "I love coding in Python.","The weather is sunny today."])
+    # test_response = (["The cat is sitting on the rug.", "I enjoy programming with Python.","Today, the weather is nice and sunny."])
+    # tokenized_context = [tokenize(c) for c in test_context]
+    # tokenized_response = [tokenize(r) for r in test_response]
+    # print(tokenized_context)
+    # print(tokenized_response)
+    # b_score = bleu_score(tokenized_context, tokenized_response)
+    # print(f"BLEU Score: {b_score}")
 
+    # Calculate BLEU score for test set
     tokenized_context = [tokenize(c) for c in test_samples['doctor_dialog']]
     tokenized_response = [tokenize(r) for r in responses['response']]
-
     b_score = bleu_score(tokenized_context, tokenized_response)
     print(f"BLEU Score: {b_score}")
 
