@@ -57,12 +57,15 @@ def fetch_llm_response(query,context):
 
     """
 
-    prompt = prompt.replace("<<CONTEXT>>",context_str)
+    prompt = prompt.replace("<<CONTEXT>>", context_str)
+
+    if len(context_str) == 0:
+     print("Context is empty!")
+     prompt = "Say you don't know the answer to this question. Ask the user to consult a professional doctor. Do not give an answer from your knowledge base"
+    
     print(prompt)
 
     messages.append({"role":"user","content":prompt})
-
-
     return retreive_summary(messages)
 
 def retreive_summary(messages):
@@ -121,32 +124,32 @@ if __name__ == "__main__":
         res_cnt = len(resps)
     
     
-    for i in range(res_cnt,len(divyasha_test_set)):
-        print("iter: ", i)
-        start = time.process_time()
-        embedding = create_embeddings([divyasha_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
-        responses,cosine_scores = find_top_k_responses(k=10, query_embedding=embedding)
-        llm_response, code = fetch_llm_response(divyasha_test_set.iloc[i]['patient_dialog'], responses)
-        if code == -1:
-            resps.to_pickle(base_path+file_name)
-            print(llm_response)
-            exit()
-        resps.at[i, 'message'] = divyasha_test_set.iloc[i]['patient_dialog']
-        resps.iloc[i]['response'] = llm_response
-        resps.iloc[i]['avg_cosine_scores'] = np.mean(cosine_scores)
-        resps.iloc[i]['context'] = responses
-        resps.to_pickle(base_path+file_name)
-        proc_time = time.process_time() - start
-        print("Time: ", proc_time)
-        if proc_time < 30:
-            time.sleep(20)
+    # for i in range(res_cnt,len(divyasha_test_set)):
+    #     print("iter: ", i)
+    #     start = time.process_time()
+    #     embedding = create_embeddings([divyasha_test_set.iloc[i]['patient_dialog']],batch_size=1).tolist()[0]
+    #     responses,cosine_scores = find_top_k_responses(k=10, query_embedding=embedding)
+    #     llm_response, code = fetch_llm_response(divyasha_test_set.iloc[i]['patient_dialog'], responses)
+    #     if code == -1:
+    #         resps.to_pickle(base_path+file_name)
+    #         print(llm_response)
+    #         exit()
+    #     resps.at[i, 'message'] = divyasha_test_set.iloc[i]['patient_dialog']
+    #     resps.iloc[i]['response'] = llm_response
+    #     resps.iloc[i]['avg_cosine_scores'] = np.mean(cosine_scores)
+    #     resps.iloc[i]['context'] = responses
+    #     resps.to_pickle(base_path+file_name)
+    #     proc_time = time.process_time() - start
+    #     print("Time: ", proc_time)
+    #     if proc_time < 30:
+    #         time.sleep(20)
 
 
-    # user_inp = ""
-    # while user_inp!='0':
-    #     user_inp = input("Enter a sentence: ")
-    #     embedding = create_embeddings([user_inp],batch_size=1).tolist()[0]
-    #     # print(embedding)
-    #     responses = find_top_k_responses(k=10,query_embedding=embedding)
-    #     llm_response = fetch_llm_response(user_inp,responses)
-    #     print(llm_response)
+    user_inp = ""
+    while user_inp!='0':
+        user_inp = input("Enter a sentence: ")
+        embedding = create_embeddings([user_inp],batch_size=1).tolist()[0]
+        # print(embedding)
+        responses = find_top_k_responses(k=10,query_embedding=embedding)
+        llm_response = fetch_llm_response(user_inp,[])
+        print(llm_response)
