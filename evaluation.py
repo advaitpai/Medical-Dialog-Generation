@@ -5,24 +5,30 @@ from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 def tokenize(text):
     return text.split()
 
-def bleu_score(context_tokens, response_tokens):
+def bleu_score(test_df):
+
+    # tokenize doctor dialogs and responses
+    response_tokens = [tokenize(r) for r in test_df['response']]
+    docdialogs_tokens = [tokenize(d) for d in test_df['doctor_dialog']]
 
     scores = []
     count = 0
     smoothing_function = SmoothingFunction().method1
     
-    for i in range(len(context_tokens)):
+    for i in range(len(response_tokens)):
         try:
-            # Calculate BLEU score
-            # if response or context is not empty
-            score = corpus_bleu([context_tokens[i]], [response_tokens[i]], smoothing_function=smoothing_function)
-            scores.append(score)
-            count += 1
+            # if test_df['context'] is not empty calculate bleu score else skip the sample
+            if test_df['context'][i] != '[]':
+                # Calculate BLEU score
+                score = corpus_bleu([docdialogs_tokens[i]], [response_tokens[i]], smoothing_function=smoothing_function)
+                scores.append(score)
+                count += 1
+            else:
+                continue
         except KeyError as e:
-            # print(f"Error calculating BLEU score for sample {i}: {e}")
-            continue # Skip this sample
+            continue
             
-    print(f"BLEU score calculated for {count} out of {len(context_tokens)} samples")
+    print(f"BLEU score calculated for {count} out of {len(response_tokens)} samples")
 
     return scores
 
@@ -43,11 +49,15 @@ if __name__ == "__main__":
     test_samples_1 = test_samples.iloc[0:100]
     test_samples_2 = test_samples.iloc[200:300]
     test_samples = pd.concat([test_samples_1, test_samples_2], ignore_index=True)
-    context = test_samples['doctor_dialog']
+    doctor_dialogs = test_samples['doctor_dialog']
     generated_responses = pd.read_csv("datasets/responses_all.csv")
     responses = generated_responses['response']
+    context = generated_responses['context']
 
-    print('length of context: ', len(context))
+    # create dataframe having columns doctor dialogs and responses and context
+    df = pd.DataFrame({'doctor_dialog': doctor_dialogs, 'response': responses, 'context': context})
+
+    print('length of actual doctor dialogs: ', len(doctor_dialogs))
     print('length of responses: ', len(responses))
     print('\n')
 
@@ -68,7 +78,8 @@ if __name__ == "__main__":
     # Calculate BLEU score for test set
     tokenized_context = [tokenize(c) for c in context]
     tokenized_response = [tokenize(r) for r in responses]
-    b_scores = bleu_score(tokenized_context, tokenized_response)
+    b_scores = bleu_score(df)
+    
     # save to text file
     with open('datasets/bleu_scores.txt', 'w') as f:
         for item in b_scores:
