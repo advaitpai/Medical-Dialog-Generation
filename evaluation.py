@@ -1,6 +1,9 @@
 import pickle
 import pandas as pd
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
+from bert_score import BERTScorer
+import tqdm
+import time
 
 def tokenize(text):
     return text.split()
@@ -32,14 +35,27 @@ def bleu_score(test_df):
 
     return scores
 
-# # calculate rouge score
-# def rouge_score(context, reponse):
+def bert_score(test_df):
+    scorer = BERTScorer(model_type='bert-base-uncased')
+    reference_dialogs = []
+    candidate_responses = []
+    for i in range(len(test_df)):
+        try:
+            # if test_df['context'] is not empty add doctor dialog and response to list else skip the sample
+            if test_df['context'][i] != '[]':
+                reference_dialogs.append(test_df['doctor_dialog'][i])
+                candidate_responses.append(test_df['response'][i])
+            else:
+                continue
+        except KeyError as e:
+            continue
 
-#     context = context.tolist()
-#     reponse = reponse.tolist()
-#     rouge = evaluate.load("rouge")
-#     scores = rouge.compute(predictions=[reponse], references=[context])
-#     return scores
+    P, R, F1 = scorer.score(candidate_responses, reference_dialogs)
+    print(f"BERT score calculated for {len(F1)} out of {len(test_df)} samples")
+    return P, R, F1
+
+def perplexity_score(context, response):
+    return
 
 
 if __name__ == "__main__":
@@ -61,38 +77,37 @@ if __name__ == "__main__":
     print('length of responses: ', len(responses))
     print('\n')
 
-    # print(test_samples['doctor_dialog'].head(10))
-    # print('---------------------')
-    # print(responses['response'].head(10))
-
-    # # Testing BLEU function
-    # test_context = (["The cat is on the mat.", "I love coding in Python.","The weather is sunny today."])
-    # test_response = (["The cat is sitting on the rug.", "I enjoy programming with Python.","Today, the weather is nice and sunny."])
-    # tokenized_context = [tokenize(c) for c in test_context]
-    # tokenized_response = [tokenize(r) for r in test_response]
-    # print(tokenized_context)
-    # print(tokenized_response)
-    # b_score = bleu_score(tokenized_context, tokenized_response)
-    # print(f"BLEU Score: {b_score}")
 
     # Calculate BLEU score for test set
-    tokenized_context = [tokenize(c) for c in context]
-    tokenized_response = [tokenize(r) for r in responses]
-    b_scores = bleu_score(df)
-    
+    start_time = time.time()
+    b_scores = bleu_score(df)         
     # save to text file
     with open('datasets/bleu_scores.txt', 'w') as f:
         for item in b_scores:
             f.write("%s\n" % item)
 
     avg_b_score = sum(b_scores)/len(b_scores)
+    end_time = time.time()
+    print(f"Time taken to calculate BLEU score: {end_time-start_time}")
+
+    # Calculate BERT score
+    start_time = time.time()
+    P, R, F1 = bert_score(df)
+    # save F1 scores text file
+    with open('datasets/bert_scores.txt', 'w') as f:
+        for item in F1:
+            f.write("%s\n" % item)
+    end_time = time.time()
+    print(f"Time taken to calculate BERT score: {end_time-start_time}")
+    
+    print('\n')
+    print('--'*20)
     print(f"Average BLEU Score: {avg_b_score}")
+    print(f"BERT Score (Mean F1): {F1.mean():.4f}")
+
+
+    # Calculate perplexity score
 
     # # Calculate ROUGE score for test set
     # r_score = rouge_score(context, responses)
     # print(f"ROUGE Score: {r_score}")
-
-
-    # # Calculate BERT score
-    # P, R, F1 = bert_score(context, response)
-    # print(f"BERT Score: {F1}")
