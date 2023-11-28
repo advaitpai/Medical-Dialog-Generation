@@ -10,3 +10,11 @@ Rubrics:
 3/5 - picking one or two answers from the top 50% of the responses. Or generic response.
 2/5 - has the context but still refers to a physician.
 1/5 - hallucinates.
+
+How to pick the responses to evaluate ?
+
+
+Ablation Study - Prompt testing:
+1. Question & Context both given.
+2. No Questionn but Context given.
+3. No Context but Question given.
