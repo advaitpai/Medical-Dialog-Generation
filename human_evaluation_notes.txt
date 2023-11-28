@@ -11,10 +11,10 @@ Rubrics:
 2/5 - has the context but still refers to a physician.
 1/5 - hallucinates.
 
-How to pick the responses to evaluate ?
-
+How to pick the responses to evaluate?
+- select top 10, median 10 and bottom 10 from your own dataset.
 
 Ablation Study - Prompt testing:
 1. Question & Context both given.
-2. No Questionn but Context given.
+2. No Question but Context given.
 3. No Context but Question given.
