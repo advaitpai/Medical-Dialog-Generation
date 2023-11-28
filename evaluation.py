@@ -120,6 +120,7 @@ def run_evaluation(evaluation_type, df):
         with open('datasets/bert_scores_ground_truth.txt', 'w') as f:
             for item in F1:
                 f.write("%s\n" % item)
+    end_time = time.time()
     print(f"Time taken to calculate BERT score: {end_time-start_time}")
 
     # Calculate ROUGE score

@@ -1,0 +1,12 @@
+notes for human evaluation:
+
+1. Sorting by avg cosine scores.
+2. categorization: summary, abstractive, no context, other
+3. Answer quality : rating: 1 to 5
+
+Rubrics:
+5/5 - all details are present from context. For no context, give 5.
+4/5 - top responses or most salient words from the context
+3/5 - picking one or two answers from the top 50% of the responses. Or generic response.
+2/5 - has the context but still refers to a physician.
+1/5 - hallucinates.
