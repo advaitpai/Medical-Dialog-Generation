@@ -84,13 +84,13 @@ def rouge_score(test_df, evaluation_type):
             continue
     
     rouge = evaluate.load('rouge')
-    results = rouge.compute(predictions=test_df['response'], references=reference)
-    print(f"ROUGE score calculated for {len(results)} out of {len(test_df)} samples")
+    results = rouge.compute(predictions=candidate_responses, references=reference_dialogs)
+    print(f"ROUGE score calculated for {len(reference_dialogs)} out of {len(test_df)} samples")
 
     return results
 
 def run_evaluation(evaluation_type, df):
-    print(f"Evaluation type: {evaluation_type}")
+    print(f"Evaluation type: responses vs {evaluation_type}")
     # Calculate BLEU score for test set
     start_time = time.time()
     b_scores = bleu_score(df, evaluation_type=evaluation_type)         
@@ -141,7 +141,8 @@ def run_evaluation(evaluation_type, df):
     print('--'*20)
     print(f"Average BLEU Score: {avg_b_score:.4f}")
     print(f"BERT Score (Mean F1): {F1.mean():.4f}")
-    print(f"ROUGE score: {r_score['rougeL']:0.4f}")
+    print(f"ROUGE-1 (unigram) score: {r_score['rouge1']:0.4f}")
+    print(f"ROUGE-2 (bigram) score: {r_score['rouge2']:0.4f}")
 
     print('Evaluation completed for: ', evaluation_type)
     print('--'*20)
