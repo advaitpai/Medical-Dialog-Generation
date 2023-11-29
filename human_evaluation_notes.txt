@@ -18,3 +18,9 @@ Ablation Study - Prompt testing:
 1. Question & Context both given.
 2. No Question but Context given.
 3. No Context but Question given.
+
+
+
+
+ANOMALOUS OBSERVATION (by ZOHAIR):
+1. In one of the responses (#59 sorted desc) - response suggests to visit a specific hospital in Bangalore, where the patients questions about suggestions on visiting a particular hospital in Bangalore. Using the contexts, the system came up with a suggestion, which seems good to me in terms of making suggestions which are note specifically relating to one's health.
