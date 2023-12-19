@@ -32,7 +32,7 @@ def find_threshold(df_all,df_samples):
     return df_samples
 
 
-df_all = pd.read_pickle('datasets/embeddings/embeddings.pkl')
+df_all = pd.read_pickle('datasets/embeddings/embeddings_large.pkl')
 print(df_all)
 ## Comment the below two line if you want to run the code on the entire dataset
 # df_samples = df_all.sample(22000,random_state=2702)# Comment this line if you want to run the code on the entire dataset
